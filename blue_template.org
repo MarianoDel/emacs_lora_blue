@@ -1,0 +1,16 @@
+* Template firmware for Arduino BluePill - STM32F103C8 -
+** Bare - Metal registers access
+** To program
+   - use stlink-v2 on .1 pins
+   - the two jumpers on 0 position
+   - program with 
+     $ make flash
+   - after program push reset
+
+** Problems on first program download
+   - at first time (I dont know, maybe its already saved) its not possible
+     to program, what I did..
+   - move board jumpers to 1 position
+   - program (now works!)
+   - move jumpers to 0 position and reset
+   - now continue programming its possible
