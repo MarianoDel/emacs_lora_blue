@@ -20,6 +20,9 @@
 #include "spi.h"
 // #include "flash_program.h"
 
+#include "sx1278_base.h"
+#include "sx1278_fsk.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -181,6 +184,20 @@ void TF_Usart3_Tx_Rx_Int (void)
 }
 
 
+void TF_PB0 (void)
+{
+    while (1)
+    {
+        LED_ON;
+        PB0_ON;
+        Wait_ms(100);
+        LED_OFF;
+        PB0_OFF;
+        Wait_ms(1000);        
+    }
+}
+
+
 void TF_Spi_Chip_Select (void)
 {
     while (1)
@@ -252,6 +269,75 @@ void TF_Spi1_Send_Single_Chip_Select (void)
         SPI_CS_OFF;
     }    
 }
+
+
+void TF_Sx_Init (void)
+{
+    SPI1_Config();
+    Usart2Config();
+
+    // unsigned char getted = 0;
+    // char buff [100] = { 0 };
+
+    Usart2Send ("\nreset to Sx module\n");
+    SxBaseRst();
+    Usart2Send ("check device id: ");
+    if (SxBaseCheckDeviceID())
+        Usart2Send("OK\n");
+    else
+        Usart2Send("ERROR!\n");
+
+    while (1);
+    
+}
+
+
+void TF_Sx_Fsk_Transmit (void)
+{
+    char buff [100] = { 0 };
+    unsigned char opmode = 0;
+    
+    SPI1_Config();
+    Usart2Config();
+
+    Usart2Send ("init device on fsk mode: ");
+    if (!SxFskInit())
+    {
+        while (1)
+        {
+            Usart2Send("ERROR!\n");
+            Wait_ms(1000);
+        }
+    }
+    else
+        Usart2Send("OK\n");
+
+    Wait_ms(300);
+    opmode = SxFskGetOpMode();
+    sprintf(buff, "opmode: %d\n", opmode);
+    Usart2Send(buff);
+    Wait_ms(300);
+
+    while (1)
+    {
+        Usart2Send("setting tx on! ");
+        SxFskSetOpMode(RF_OPMODE_TRANSMITTER);
+        Wait_ms(10);
+        opmode = SxFskGetOpMode();
+        sprintf(buff, "opmode: %d\n", opmode);
+        Usart2Send(buff);
+        Wait_ms(1000);
+
+        Usart2Send("setting tx off ");
+        SxFskSetOpMode(RF_OPMODE_STANDBY);
+        Wait_ms(1);
+        opmode = SxFskGetOpMode();
+        sprintf(buff, "opmode: %d\n", opmode);
+        Usart2Send(buff);
+        Wait_ms(3000);
+    }
+}
+
 
 
 // void TF_Usart2_Adc_Dma (void)

@@ -77,6 +77,10 @@ SRC += ./src/tim.c
 SRC += ./src/spi.c
 SRC += ./src/test_functions.c
 
+## SX1278 lib
+SRC += ./src/sx1278_base.c
+SRC += ./src/sx1278_fsk.c
+SRC += ./src/sx1278_base_io.c
 
 ## Core Support
 SRC += ./startup_src/syscalls.c
@@ -217,27 +221,40 @@ tests_comm:
 	# process coverage
 	gcov comm.c -m
 
-tests_battery:
+tests_spi:
 	# first module objects to test
-	gcc -c src/battery.c -I. $(INCDIR) $(DDEFS)
-	gcc -c src/dsp.c -I. $(INCDIR) $(DDEFS)
+	# gcc -c src/battery.c -I. $(INCDIR) $(DDEFS)
+	# gcc -c src/dsp.c -I. $(INCDIR) $(DDEFS)
 	# second auxiliary helper modules
 	gcc -c src/tests_ok.c
 	gcc -c src/tests_utils.c
-	gcc src/tests_battery.c battery.o dsp.o tests_ok.o tests_utils.o -I $(INCDIR) $(DDEFS)
+	gcc -c src/tests_mock_spi.c
+	gcc src/tests_spi.c tests_ok.o tests_utils.o tests_mock_spi.o -I $(INCDIR) $(DDEFS)
 	./a.out
 
-tests_comms_from_panel:
+tests_sx1278_base:
 	# first module objects to test
-	gcc -c --coverage src/comms_from_panel.c -I. $(INCDIR) $(DDEFS)
+	gcc --coverage -c src/sx1278_base.c -I. $(INCDIR) $(DDEFS)
 	# second auxiliary helper modules
-	gcc -c src/tests_ok.c -I $(INCDIR)
-	gcc -c src/tests_mock_usart.c -I $(INCDIR)
-	gcc --coverage src/tests_comms_from_panel.c comms_from_panel.o tests_ok.o tests_mock_usart.o -I $(INCDIR) $(DDEFS)
+	gcc -c src/tests_ok.c
+	gcc -c src/tests_mock_spi.c
+	gcc --coverage src/tests_sx1278_base.c sx1278_base.o tests_ok.o tests_mock_spi.o -I $(INCDIR) $(DDEFS)
 	# test execution
 	./a.out
 	# process coverage
-	gcov comms_from_panel.c -m
+	gcov sx1278_base.c -m
+
+
+tests_sx1278_fsk:
+	# first module objects to test
+	gcc --coverage -c src/sx1278_fsk.c -I. $(INCDIR) $(DDEFS)
+	# second auxiliary helper modules
+	gcc -c src/tests_ok.c
+	gcc --coverage src/tests_sx1278_fsk.c sx1278_fsk.o tests_ok.o -I $(INCDIR) $(DDEFS)
+	# test execution
+	./a.out
+	# process coverage
+	gcov sx1278_fsk.c -m
 
 tests_serial:
 	# second auxiliary helper modules

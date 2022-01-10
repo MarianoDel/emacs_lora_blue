@@ -63,7 +63,10 @@ int main (void)
     // TF_Spi1_Send_Single ();
     // TF_Spi_Chip_Select ();
     // TF_Spi1_Send_Single_Chip_Select ();
-    TF_Spi1_Send_Receive_Usart2 ();
+    // TF_Spi1_Send_Receive_Usart2 ();
+    // TF_PB0 ();
+    // TF_Sx_Init ();
+    TF_Sx_Fsk_Transmit ();
     
 
     // Peripherals Activation

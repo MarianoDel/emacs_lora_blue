@@ -95,17 +95,28 @@ typedef enum {
 
 
 //--- Port B ---//
+//PB0
+#define PB0    ((GPIOB->ODR & 0x0001) != 0)
+#define PB0_ON    (GPIOB->BSRR = 0x00000001)
+#define PB0_OFF    (GPIOB->BSRR = 0x00010000)
+
+//PB1
+#define PB1    ((GPIOB->ODR & 0x0002) != 0)
+
 //PB8 
-#define P0_14 ((GPIOB->ODR & 0x0100) != 0)
-#define P0_14_ON (GPIOB->BSRR = 0x00000100)
-#define P0_14_OFF (GPIOB->BSRR = 0x01000000)
+#define PB8    ((GPIOB->ODR & 0x0100) != 0)
+#define PB8_ON    (GPIOB->BSRR = 0x00000100)
+#define PB8_OFF    (GPIOB->BSRR = 0x01000000)
+
+//PB10
+#define PB10    ((GPIOB->ODR & 0x0400) != 0)
 
 //PB9
-#define RESET ((GPIOB->ODR & 0x0200) != 0)
-#define RESET_ON (GPIOB->BSRR = 0x00000200)
-#define RESET_OFF (GPIOB->BSRR = 0x02000000)
+// #define RESET ((GPIOB->ODR & 0x0200) != 0)
+// #define RESET_ON (GPIOB->BSRR = 0x00000200)
+// #define RESET_OFF (GPIOB->BSRR = 0x02000000)
 
-//PB10, PB11 Alternative Usart 3 Tx Rx
+
 
 
 //--- Port C ---//

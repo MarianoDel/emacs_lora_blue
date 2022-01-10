@@ -46,10 +46,10 @@ void Tamper_Config(void)
 
 
 //------- GPIO REGISTERS ----------//
-//
-//	GPIOx->CRL	pin 7 - 0
+//      Nibble bits
 //	3  2  1  0
 //	CNF0  MODE0
+//	GPIOx->CRL	pin 7 - 0
 //	GPIOx->CRH	pin 15 - 8
 //
 //      En hexa me queda cada nibble es igual a la configuracion de ese pin
@@ -116,15 +116,15 @@ void GpioInit (void)
     // GPIOA->ODR = temp;
     
     //--- GPIOB Low Side -------------------//
-    // temp = GPIOB->CRL;    //PB5 output
-    // temp &= 0xFF0FFFFF;
-    // temp |= 0x00200000;
-    // GPIOB->CRL = temp;
+    temp = GPIOB->CRL;    //PB1 input PB0 output
+    temp &= 0xFFFFFF00;
+    temp |= 0x00000041;
+    GPIOB->CRL = temp;
 
     //--- GPIOB High Side -------------------//
-    temp = GPIOB->CRH;    //PB8 PB9 output; PB10-PB11 Alternative (Usart3)
-    temp &= 0xFFFF0000;
-    temp |= 0x00008A22;
+    temp = GPIOB->CRH;    //PB11 PB10 input
+    temp &= 0xFFFF00FF;
+    temp |= 0x00004400;
     GPIOB->CRH = temp;    
     
     //--- GPIOC Low Side -------------------//

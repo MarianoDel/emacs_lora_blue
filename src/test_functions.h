@@ -29,6 +29,9 @@ void TF_Spi1_Send_Single (void);
 void TF_Spi1_Send_Receive_Usart2 (void);
 void TF_Spi_Chip_Select (void);
 void TF_Spi1_Send_Single_Chip_Select (void);
+void TF_PB0 (void);
+void TF_Sx_Init (void);
+void TF_Sx_Fsk_Transmit (void);
 
 
 #endif    /* _TEST_FUNTIONS_H_ */
