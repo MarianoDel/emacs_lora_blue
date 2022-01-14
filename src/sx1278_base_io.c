@@ -57,4 +57,78 @@ void Sx_Cs_Off (void)
 }
 
 
+unsigned char Sx_Dio0_Get (void)
+{
+    return PB1_IN;
+}
+
+
+void Sx_Dio1_Output (void)
+{
+    unsigned int temp;
+    
+    temp = GPIOB->CRH;    //PB10 output
+    temp &= 0xFFFFF0FF;
+    temp |= 0x00000100;
+    GPIOB->CRH = temp;    
+}
+
+
+void Sx_Dio1_Input (void)
+{
+    unsigned int temp;
+    
+    temp = GPIOB->CRH;    //PB10 input
+    temp &= 0xFFFFF0FF;
+    temp |= 0x00000400;
+    GPIOB->CRH = temp;    
+}
+
+
+unsigned char Sx_Dio1_Get (void)
+{
+    return PB10_IN;
+}
+
+
+void Sx_Dio2_Output (void)
+{
+    unsigned int temp;
+    
+    temp = GPIOB->CRH;    //PB11 output
+    temp &= 0xFFFF0FFF;
+    temp |= 0x00001000;
+    GPIOB->CRH = temp;    
+}
+
+
+void Sx_Dio2_Input (void)
+{
+    unsigned int temp;
+    
+    temp = GPIOB->CRH;    //PB11 input
+    temp &= 0xFFFF0FFF;
+    temp |= 0x00004000;
+    GPIOB->CRH = temp;    
+}
+
+
+unsigned char Sx_Dio2_Get (void)
+{
+    return PB11_IN;
+}
+
+
+void Sx_Dio2_Set (void)
+{
+    PB11_ON;
+}
+
+
+void Sx_Dio2_Reset (void)
+{
+    PB11_OFF;
+}
+
+
 //--- end of file ---//

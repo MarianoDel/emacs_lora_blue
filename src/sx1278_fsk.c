@@ -140,27 +140,37 @@ unsigned char SxFskInit (void)
     // SxBaseWrite(REG_FRFMID, RF_PARAMP_MODULATIONSHAPING_01);
     // SxBaseWrite(REG_FRFLSB, RF_PARAMP_MODULATIONSHAPING_01);
 
-    // transmitter settings
+    //////////////////////////
+    // transmitter settings //
+    //////////////////////////
     // set power output
     // SxBaseWrite(REG_PACONFIG, RF_PARAMP_MODULATIONSHAPING_01);    // defaults are good
-    SxBaseWrite(REG_PACONFIG, RF_PACONFIG_PASELECT_PABOOST | 0x4f);    // defaults are good    
+    // SxBaseWrite(REG_PACONFIG, RF_PACONFIG_PASELECT_PABOOST | 0x0f);    // power +17dBm
+    SxBaseWrite(REG_PACONFIG, RF_PACONFIG_PASELECT_PABOOST);    // power +2dBm    
 
-    // set ramp and modulation shaping Gaussian BT = 1
-    // SxBaseWrite(REG_PARAMP, RF_PARAMP_MODULATIONSHAPING_01);    // defaults are good
+    SxBaseWrite(REG_PARAMP,
+                RF_PARAMP_MODULATIONSHAPING_01 |
+                RF_PARAMP_0040_US);    // BT = 1
+    
+    // SxBaseWrite(REG_PARAMP,
+    //             RF_PARAMP_MODULATIONSHAPING_10 |
+    //             RF_PARAMP_0040_US);    // BT = 0.5
 
     // set overload current
     // SxBaseWrite(REG_OCP, RF_PARAMP_MODULATIONSHAPING_01);    // defaults are good
 
-    // receiver settings    
+    ///////////////////////
+    // receiver settings //
+    ///////////////////////
     // set lna
-    SxBaseWrite(REG_LNA, RF_LNA_GAIN_G1);
+    // SxBaseWrite(REG_LNA, RF_LNA_GAIN_G1);    // defaults are good
 
     // rx config
-    SxBaseWrite(REG_RXCONFIG,
-                RF_RXCONFIG_RESTARTRXONCOLLISION_OFF |
-                RF_RXCONFIG_AFCAUTO_ON |
-                RF_RXCONFIG_AGCAUTO_ON |
-                RF_RXCONFIG_RXTRIGER_PREAMBLEDETECT);
+    // SxBaseWrite(REG_RXCONFIG,
+    //             RF_RXCONFIG_RESTARTRXONCOLLISION_OFF |
+    //             RF_RXCONFIG_AFCAUTO_OFF |
+    //             RF_RXCONFIG_AGCAUTO_ON |
+    //             RF_RXCONFIG_RXTRIGER_PREAMBLEDETECT);    // defauls are good
 
     // rssi config
     // SxBaseWrite(REG_RSSICONFIG, 0xFF);    // defaults are good
@@ -169,7 +179,9 @@ unsigned char SxFskInit (void)
     // SxBaseWrite(REG_RSSICOLLISION, 0xFF);    // defaults are good
 
     // rssi threshold
-    // SxBaseWrite(REG_RSSITHRESH, 0xFF);    // defaults are good
+    // SxBaseWrite(REG_RSSITHRESH, 220);    // -110dBm detection
+    SxBaseWrite(REG_RSSITHRESH, 200);    // -100dBm detection    
+    // SxBaseWrite(REG_RSSITHRESH, 160);    // -80dBm detection    
 
     // rx bandwith
     // SxBaseWrite(REG_RXBW, 0xFF);    // defaults are good
@@ -177,11 +189,22 @@ unsigned char SxFskInit (void)
     // rx afc bw
     // SxBaseWrite(REG_AFCBW, 0xFF);    // defaults are good
 
+    // rx ook peak
+    // SxBaseWrite(REG_OOKPEAK, RF_OOKPEAK_BITSYNC_ON);    // defaults are good
+    
     // afc and fei to defaults
 
-    // preamble config
-    // SxBaseWrite(REG_PREAMBLEDETECT, 0xFF);    // defaults are good
+    // rx preamble config
+    SxBaseWrite(REG_PREAMBLEDETECT,
+                RF_PREAMBLEDETECT_DETECTOR_ON |
+                RF_PREAMBLEDETECT_DETECTORSIZE_2 |
+                RF_PREAMBLEDETECT_DETECTORTOL_4);    // defaults are good
 
+    // SxBaseWrite(REG_PREAMBLEDETECT,
+    //             RF_PREAMBLEDETECT_DETECTOR_OFF |
+    //             RF_PREAMBLEDETECT_DETECTORSIZE_2 |
+    //             RF_PREAMBLEDETECT_DETECTORTOL_4);    // no preable detector
+    
     // preamble size
     // SxBaseWrite(REG_PREAMBLEMSB, 0xFF);    // defaults are good
     // SxBaseWrite(REG_PREAMBLELSB, 0xFF);    // defaults are good
@@ -269,6 +292,83 @@ unsigned char SxFskGetOpMode (void)
     return last_mode;
 }
 
+
+void SxFskSetFreqDev (unsigned int fdev)
+{
+    unsigned int freg = 0;
+    unsigned char buff[10] = { 0 };
+    
+    freg = ( unsigned int )( ( float )fdev / ( float )FREQ_STEP );    // original
+    buff[0] = (unsigned char) (( freg >> 8 ) & 0xFF);
+    buff[1] = (unsigned char) (( freg ) & 0xFF);
+    SxBaseBurstWrite(REG_FDEVMSB, buff, 2);
+}
+
+
+unsigned int SxFskGetFreqDev (void)
+{
+    unsigned int freg = 0;
+    unsigned char buff[10] = { 0 };
+    SxBaseBurstRead(REG_FDEVMSB, buff, 2);
+
+    freg = buff[0] << 8 ;
+    freg += buff[1];
+    float fdev = (float)freg * (float)FREQ_STEP;
+    return (unsigned int)(fdev);
+}
+
+
+void SxFskSetBitrate (unsigned int bitrate)
+{
+    unsigned int freg = 0;
+    unsigned char buff[10] = { 0 };
+    
+    freg = XTAL_FREQ / bitrate;
+    buff[0] = (unsigned char) (( freg >> 8 ) & 0xFF);
+    buff[1] = (unsigned char) (( freg ) & 0xFF);
+    SxBaseBurstWrite(REG_BITRATEMSB, buff, 2);
+}
+
+
+unsigned int SxFskGetBitrate (void)
+{
+    unsigned int freg = 0;
+    unsigned char buff[10] = { 0 };
+    SxBaseBurstRead(REG_BITRATEMSB, buff, 2);
+
+    freg = buff[0] << 8 ;
+    freg += buff[1];
+    return XTAL_FREQ / freg;
+}
+
+
+void SxFskSetModuletionIndex (unsigned int bitrate, float mi)
+{
+    unsigned int fdev = bitrate / 2;
+    fdev = fdev * mi;    
+
+    // set bitrate
+    SxFskSetBitrate (bitrate);
+    // set deviation
+    SxFskSetFreqDev (fdev);
+}
+
+
+float SxFskGetModuletionIndex (void)
+{
+    unsigned int bitrate = SxFskGetBitrate ();    
+    unsigned int fdev = SxFskGetFreqDev ();
+
+    float mi = 2 * (float)fdev / (float)bitrate;
+    return mi;
+}
+
+
+short SxFskGetRssiValue (void)
+{
+    short rssi = SxBaseRead (REG_RSSIVALUE);
+    return (-rssi / 2);
+}
 
 // void SxFsk_Process (void)
 // {
@@ -673,45 +773,7 @@ unsigned char SxFskGetOpMode (void)
 
 // }
 
-// void SX1278FskSetBitrate( uint32_t bitrate )
-// {
-//     FskSettings.Bitrate = bitrate;
-    
-//     bitrate = ( uint16_t )( ( double )XTAL_FREQ / ( double )bitrate );
-//     SX1278->RegBitrateMsb    = ( uint8_t )( bitrate >> 8 );
-//     SX1278->RegBitrateLsb    = ( uint8_t )( bitrate & 0xFF );
-//     SX1278WriteBuffer( REG_BITRATEMSB, &SX1278->RegBitrateMsb, 2 );    
-// }
 
-// uint32_t SX1278FskGetBitrate( void )
-// {
-//     SX1278ReadBuffer( REG_BITRATEMSB, &SX1278->RegBitrateMsb, 2 );
-//     FskSettings.Bitrate = ( ( ( uint32_t )SX1278->RegBitrateMsb << 8 ) | ( ( uint32_t )SX1278->RegBitrateLsb ) );
-//     FskSettings.Bitrate = ( uint16_t )( ( double )XTAL_FREQ / ( double )FskSettings.Bitrate );
-
-//     return FskSettings.Bitrate;
-// }
-
-// void SX1278FskSetFdev( uint32_t fdev )
-// {
-//     FskSettings.Fdev = fdev;
-
-//     SX1278Read( REG_FDEVMSB, &SX1278->RegFdevMsb ); 
-
-//     fdev = ( uint16_t )( ( double )fdev / ( double )FREQ_STEP );
-//     SX1278->RegFdevMsb    = ( ( SX1278->RegFdevMsb & RF_FDEVMSB_FDEV_MASK ) | ( ( ( uint8_t )( fdev >> 8 ) ) & ~RF_FDEVMSB_FDEV_MASK ) );
-//     SX1278->RegFdevLsb    = ( uint8_t )( fdev & 0xFF );
-//     SX1278WriteBuffer( REG_FDEVMSB, &SX1278->RegFdevMsb, 2 );    
-// }
-
-// uint32_t SX1278FskGetFdev( void )
-// {
-//     SX1278ReadBuffer( REG_FDEVMSB, &SX1278->RegFdevMsb, 2 );
-//     FskSettings.Fdev = ( ( ( uint32_t )( ( SX1278->RegFdevMsb << 8 ) & ~RF_FDEVMSB_FDEV_MASK ) ) | ( ( uint32_t )SX1278->RegFdevLsb ) );
-//     FskSettings.Fdev = ( uint16_t )( ( double )FskSettings.Fdev * ( double )FREQ_STEP );
-
-//     return FskSettings.Fdev;
-// }
 
 // void SX1278FskSetRFPower( int8_t power )
 // {

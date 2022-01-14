@@ -81,6 +81,7 @@ SRC += ./src/test_functions.c
 SRC += ./src/sx1278_base.c
 SRC += ./src/sx1278_fsk.c
 SRC += ./src/sx1278_base_io.c
+SRC += ./src/data_slicer.c
 
 ## Core Support
 SRC += ./startup_src/syscalls.c
@@ -137,15 +138,9 @@ ASFLAGS = $(MCFLAGS) -g -gdwarf-2 -mthumb  -a=$(<:.s=.lst)
 # CON INFO PARA DEBUGGER + STRIP CODE
 CPFLAGS = $(MCFLAGS) $(OPT) -g -gdwarf-2 -mthumb -fomit-frame-pointer -Wall -fdata-sections -ffunction-sections -fverbose-asm -Wa,-ahlms=$(<:.c=.lst) $(DDEFS)
 
-# SIN DEAD CODE, hace el STRIP
-#LDFLAGS = $(MCFLAGS) -mthumb --specs=nano.specs -Wl,--gc-sections -nostartfiles -T$(LDSCRIPT) -Wl,-Map=$(FULL_PRJ).map,--cref,--no-warn-mismatch $(LIBDIR)
-
-# SIN DEAD CODE, hace el STRIP + FLOAT = SOFT
+# Linker flags SIN DEAD CODE, hace el STRIP + FLOAT = SOFT
 LDFLAGS = $(MCFLAGS) -mthumb -lm --specs=nano.specs -Wl,--gc-sections -nostartfiles -T$(LDSCRIPT) -Wl,-Map=$(FULL_PRJ).map,--cref,--no-warn-mismatch $(LIBDIR)
 
-# CON DEAD CODE
-#LDFLAGS = $(MCFLAGS) -mthumb --specs=nano.specs -nostartfiles -T$(LDSCRIPT) -Wl,-Map=$(FULL_PRJ).map,--cref,--no-warn-mismatch $(LIBDIR)
-#LDFLAGS = $(MCFLAGS) -mthumb -T$(LDSCRIPT) -Wl,-Map=$(FULL_PRJ).map,--cref,--no-warn-mismatch $(LIBDIR)
 
 #
 # makefile rules
@@ -245,12 +240,25 @@ tests_sx1278_base:
 	gcov sx1278_base.c -m
 
 
+tests_data_slicer:
+	# first module objects to test
+	gcc --coverage -c src/data_slicer.c
+	# second auxiliary helper modules
+	gcc -c src/tests_ok.c
+	gcc --coverage src/tests_data_slicer.c data_slicer.o tests_ok.o -I $(INCDIR) $(DDEFS)
+	# test execution
+	./a.out
+	# process coverage
+	gcov data_slicer.c -m
+
+
 tests_sx1278_fsk:
 	# first module objects to test
 	gcc --coverage -c src/sx1278_fsk.c -I. $(INCDIR) $(DDEFS)
 	# second auxiliary helper modules
 	gcc -c src/tests_ok.c
-	gcc --coverage src/tests_sx1278_fsk.c sx1278_fsk.o tests_ok.o -I $(INCDIR) $(DDEFS)
+	gcc -c src/tests_utils.c
+	gcc --coverage src/tests_sx1278_fsk.c sx1278_fsk.o tests_ok.o tests_utils.o -I $(INCDIR) $(DDEFS)
 	# test execution
 	./a.out
 	# process coverage

@@ -1196,6 +1196,15 @@ void SxFskSetFreq (unsigned int freq);
 unsigned int SxFskGetFreq (void);
 void SxFskSetOpMode (unsigned char new_mode);
 unsigned char SxFskGetOpMode (void);
+void SxFskSetFreqDev (unsigned int freq);
+unsigned int SxFskGetFreqDev (void);
+void SxFskSetBitrate (unsigned int bitrate);
+unsigned int SxFskGetBitrate (void);
+void SxFskSetModuletionIndex (unsigned int bitrate, float mi);
+float SxFskGetModuletionIndex (void);
+short SxFskGetRssiValue (void);
+
+
 
 #endif    /* _SX1278_FSK_H_ */
 

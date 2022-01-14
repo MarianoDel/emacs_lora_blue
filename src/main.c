@@ -66,7 +66,20 @@ int main (void)
     // TF_Spi1_Send_Receive_Usart2 ();
     // TF_PB0 ();
     // TF_Sx_Init ();
-    TF_Sx_Fsk_Transmit ();
+
+    // transimit tests
+    // TF_Sx_Fsk_Transmit ();
+    // TF_Sx_Fsk_Transmit_Zero_Dev ();
+    // TF_Sx_Fsk_Transmit_Modulation ();
+    // TF_Sx_Fsk_Transmit_Modulation_Preamble ();
+    // TF_Sx_Fsk_Transmit_Modulation2 ();
+    // TF_Sx_Fsk_Transmit_Modulation_Sliced ();
+
+    // receive tests
+    // TF_Sx_Fsk_Receive_Rssi ();
+    // TF_Sx_Fsk_Receive_Preamble ();
+    // TF_Sx_Fsk_Receive_Data_Sliced ();
+    TF_Sx_Fsk_Receive_Data_Sliced_OnlyData ();
     
 
     // Peripherals Activation

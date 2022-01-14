@@ -32,6 +32,18 @@ void TF_Spi1_Send_Single_Chip_Select (void);
 void TF_PB0 (void);
 void TF_Sx_Init (void);
 void TF_Sx_Fsk_Transmit (void);
+void SxFskSetFreq (unsigned int freq);
+unsigned int SxFskGetFreq (void);
+void TF_Sx_Fsk_Transmit_Zero_Dev (void);
+void TF_Sx_Fsk_Transmit_Modulation (void);
+void TF_Sx_Fsk_Transmit_Modulation_Preamble (void);
+void TF_Sx_Fsk_Transmit_Modulation2 (void);
+void TF_Sx_Fsk_Transmit_Modulation_Sliced (void);
+
+void TF_Sx_Fsk_Receive_Rssi (void);
+void TF_Sx_Fsk_Receive_Preamble (void);
+void TF_Sx_Fsk_Receive_Data_Sliced (void);
+void TF_Sx_Fsk_Receive_Data_Sliced_OnlyData (void);
 
 
 #endif    /* _TEST_FUNTIONS_H_ */

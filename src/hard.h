@@ -101,7 +101,7 @@ typedef enum {
 #define PB0_OFF    (GPIOB->BSRR = 0x00010000)
 
 //PB1
-#define PB1    ((GPIOB->ODR & 0x0002) != 0)
+#define PB1_IN    ((GPIOB->IDR & 0x0002) != 0)
 
 //PB8 
 #define PB8    ((GPIOB->ODR & 0x0100) != 0)
@@ -109,12 +109,13 @@ typedef enum {
 #define PB8_OFF    (GPIOB->BSRR = 0x01000000)
 
 //PB10
-#define PB10    ((GPIOB->ODR & 0x0400) != 0)
+#define PB10_IN    ((GPIOB->IDR & 0x0400) != 0)
 
-//PB9
-// #define RESET ((GPIOB->ODR & 0x0200) != 0)
-// #define RESET_ON (GPIOB->BSRR = 0x00000200)
-// #define RESET_OFF (GPIOB->BSRR = 0x02000000)
+//PB11
+#define PB11_IN    ((GPIOB->IDR & 0x0800) != 0)
+#define PB11    ((GPIOB->ODR & 0x0800) != 0)
+#define PB11_ON    (GPIOB->BSRR = 0x00000800)
+#define PB11_OFF    (GPIOB->BSRR = 0x08000000)
 
 
 
