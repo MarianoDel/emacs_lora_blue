@@ -368,10 +368,13 @@ void TF_Sx_Fsk_Transmit_Zero_Dev (void)
     else
         Usart2Send("OK\n");
 
-    Wait_ms(100);
+    Wait_ms(10);
+    SxFskSetFreq(434000000);
+    Usart2Send("Freq set\n");
+    Wait_ms(10);
     SxFskSetFreqDev(0);
     Usart2Send("Freq dev to zero\n");
-    Wait_ms(200);
+    Wait_ms(300);
     opmode = SxFskGetOpMode();
     sprintf(buff, "opmode: %d\n", opmode);
     Usart2Send(buff);
@@ -601,7 +604,9 @@ void TF_Sx_Fsk_Transmit_Modulation_Sliced (void)
     else
         Usart2Send("OK\n");
 
-    Wait_ms(300);
+    SxFskSetFreqInt(434000000);
+    Usart2Send("Freq set\n");
+    Wait_ms(10);
     opmode = SxFskGetOpMode();
     sprintf(buff, "opmode: %d\n", opmode);
     Usart2Send(buff);
@@ -1086,7 +1091,7 @@ void TF_Sx_Fsk_Receive_Data_Sliced (void)
 
 void TF_Sx_Fsk_Receive_Data_Sliced_OnlyData (void)
 {
-    char buff [100] = { 0 };
+    char buff [200] = { 0 };
     unsigned char opmode = 0;
     
     SPI1_Config();
@@ -1110,7 +1115,7 @@ void TF_Sx_Fsk_Receive_Data_Sliced_OnlyData (void)
     Usart2Send(buff);
     Wait_ms(300);
 
-    SxFskSetFreq(434000600);
+    SxFskSetFreqInt(433997500);
     Sx_Dio1_Input();
     Sx_Dio2_Input();    
     SxBaseWrite(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_01);    // map to RSSI/preamble
@@ -1123,7 +1128,8 @@ void TF_Sx_Fsk_Receive_Data_Sliced_OnlyData (void)
     unsigned char last_dio1 = 0;
     unsigned char data_rx_buff [3] = { 0 };
     slicer_answer_e sl_answer = SLICER_WORKING;
-    unsigned int pckt_error = 0;
+    unsigned int error_sync = 0;
+    unsigned int error_preamble = 0;    
     unsigned int pckt_good = 0;    
     comms_timeout = 20000;
     
@@ -1142,7 +1148,7 @@ void TF_Sx_Fsk_Receive_Data_Sliced_OnlyData (void)
             preamble_det = 1;
             last_dio1 = Sx_Dio1_Get();
             timer_standby = 100;
-            comms_timeout = 2000;
+            comms_timeout = 2100;    //2% clock compensation
             pckt_good++;
         }
 
@@ -1221,7 +1227,10 @@ void TF_Sx_Fsk_Receive_Data_Sliced_OnlyData (void)
             (Sx_Dio0_Get()) &&
             (!timer_standby))
         {
-            pckt_error++;
+            error_sync++;
+            if (pckt_good)
+                pckt_good--;
+            
             LED_OFF;
             Usart2Send("preamble timeout\n");
             // only rssi flag
@@ -1236,19 +1245,25 @@ void TF_Sx_Fsk_Receive_Data_Sliced_OnlyData (void)
 
         if (!comms_timeout)
         {
-            comms_timeout = 2000;
-            pckt_error++;
-            if ((pckt_error % 20) == 0)
+            comms_timeout = 2100;    //2% clock compensation
+            error_preamble++;
+            if ((error_preamble % 20) == 0)
             {
-                unsigned int total = pckt_error + pckt_good;
-                unsigned int rate_int = pckt_error * 100 / total;
-                unsigned int rate_dec = (pckt_error * 10000 / total) - rate_int * 100;
+                unsigned int total = error_preamble + error_sync + pckt_good;
+                unsigned int ratep_int = error_preamble * 100 / total;
+                unsigned int ratep_dec = (error_preamble * 10000 / total) - ratep_int * 100;
+
+                unsigned int rates_int = error_sync * 100 / total;
+                unsigned int rates_dec = (error_sync * 10000 / total) - rates_int * 100;
                 
-                sprintf(buff, "pck errors: %d total: %d rate: %d.%d%%\n",
-                        pckt_error,
-                        pckt_error + pckt_good,
-                        rate_int,
-                        rate_dec);
+                sprintf(buff, "total: %d preamble err: %d sync err: %d pre: %d.%d%% sync: %d.%d%%\n",
+                        total,
+                        error_preamble,
+                        error_sync,
+                        ratep_int,
+                        ratep_dec,
+                        rates_int,
+                        rates_dec);
                 Usart2Send(buff);
             }
         }

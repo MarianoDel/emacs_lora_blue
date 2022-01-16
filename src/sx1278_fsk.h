@@ -1193,6 +1193,7 @@ typedef enum {
 unsigned char SxFskInit (void);
 unsigned char SxFsk_GetState (void);
 void SxFskSetFreq (unsigned int freq);
+void SxFskSetFreqInt (unsigned int freq);
 unsigned int SxFskGetFreq (void);
 void SxFskSetOpMode (unsigned char new_mode);
 unsigned char SxFskGetOpMode (void);

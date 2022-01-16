@@ -38,6 +38,7 @@ unsigned char sx_buff [256] = { 0 };
 // Module Functions for testing ------------------------------------------------
 void Test_SxFsk_Init (void);
 void Test_SxFsk_Set_Get_Freq (void);
+void Test_SxFsk_Set_Get_FreqInt (void);
 void Test_SxFsk_Set_Get_Freq_Dev (void);
 void Test_SxFsk_Set_Get_Bitrate (void);
 void Test_SxFsk_Set_Get_Mod_Index (void);
@@ -51,9 +52,10 @@ int main(int argc, char *argv[])
 
     // Test_SxFsk_Init ();
     Test_SxFsk_Set_Get_Freq ();
-    Test_SxFsk_Set_Get_Freq_Dev ();
-    Test_SxFsk_Set_Get_Bitrate ();
-    Test_SxFsk_Set_Get_Mod_Index ();
+    Test_SxFsk_Set_Get_FreqInt ();    
+    // Test_SxFsk_Set_Get_Freq_Dev ();
+    // Test_SxFsk_Set_Get_Bitrate ();
+    // Test_SxFsk_Set_Get_Mod_Index ();
 }
 
 
@@ -71,9 +73,28 @@ void Test_SxFsk_Init (void)
 
 void Test_SxFsk_Set_Get_Freq (void)
 {
-    unsigned int setted = 433000000;
+    unsigned int setted = 434000924;
     SxFskSetFreq(setted);
     unsigned int freq = SxFskGetFreq();
+    printf("Setting freq with SxFskSetFreq()\n");    
+    printf("freq setted: %d getted: %d: ", setted, freq);
+    if (setted == freq)
+        PrintOK();
+    else
+        PrintERR();
+}
+
+
+void Test_SxFsk_Set_Get_FreqInt (void)
+{
+    unsigned int setted = 434000924;
+    SxFskSetFreqInt(setted);
+    unsigned int freq = SxFskGetFreq();
+
+    printf("sizeof unsigned int: %d\n", sizeof(unsigned int));
+    printf("sizeof unsigned long long int: %d\n", sizeof(unsigned long long int));    
+
+    printf("Setting freq with SxFskSetFreqInt()\n");    
     printf("freq setted: %d getted: %d: ", setted, freq);
     if (setted == freq)
         PrintOK();

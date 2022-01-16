@@ -169,7 +169,8 @@ slicer_answer_e DataSlicerTx (unsigned char * bit, unsigned char * data, unsigne
         *bit = preamble_cnt % 2;
         preamble_cnt++;
         
-        if (preamble_cnt == 16)
+        // if (preamble_cnt == 16)
+        if (preamble_cnt == 24)            
         {
             sl_cnt = 0;
             slicer_tx_status = SL_STATUS_SYNC;            
