@@ -25,6 +25,8 @@
 #include "sx1278_fsk.h"
 #include "data_slicer.h"
 
+#include "sx1278_lora.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -38,12 +40,18 @@ extern volatile unsigned short comms_timeout;
 
 
 // Globals ---------------------------------------------------------------------
+volatile unsigned short timer_millis = 0;
+volatile unsigned short timer_secs = 0;
+volatile unsigned short timer_pckt = 0;
 
 
 // Module Private Types & Macros -----------------------------------------------
 
 
 // Module Private Functions ----------------------------------------------------
+void SendRates (unsigned int err_preamble,
+                unsigned int err_sync,
+                unsigned int p_good);
 
 
 // Module Functions ------------------------------------------------------------
@@ -661,7 +669,160 @@ void TF_Sx_Fsk_Transmit_Modulation_Sliced (void)
         opmode = SxFskGetOpMode();
         sprintf(buff, "opmode: %d\n", opmode);
         Usart2Send(buff);
-        Wait_ms(2000);
+        Wait_ms(1999);
+    }
+}
+
+
+char buff_tx_pckt [] = {"THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 0123456789\nEND"};    //54 bytes?
+void TF_Sx_Fsk_Transmit_Packet_for_Slicer (void)
+{
+    char buff [100] = { 0 };
+    unsigned char opmode = 0;
+    
+    SPI1_Config();
+    Usart2Config();
+
+    Usart2Send ("init device on fsk and packet mode: ");
+    if (!SxFskPacketInit())
+    {
+        while (1)
+        {
+            Usart2Send("ERROR!\n");
+            Wait_ms(1000);
+        }
+    }
+    else
+        Usart2Send("OK\n");
+
+    SxFskSetFreqInt(434000000);
+    Usart2Send("Freq set\n");
+    Wait_ms(10);
+    opmode = SxFskGetOpMode();
+    sprintf(buff, "opmode: %d\n", opmode);
+    Usart2Send(buff);
+    Wait_ms(10);
+
+    unsigned char fifo_st = 0;
+    unsigned char pckt_len = sizeof(buff_tx_pckt);    // sync word to rx and (buff_tx - 1)
+    SxBaseWrite(REG_PAYLOADLENGTH, pckt_len);
+    Sx_Dio2_Output();
+        
+    while (1)
+    {
+        fifo_st = SxBaseRead (REG_IRQFLAGS2);
+        sprintf(buff, "fifo status irq2: 0x%02x\n", fifo_st);
+        Usart2Send(buff);
+        
+        // set the fifo
+        SxBaseWrite(REG_FIFO, 0x01);    //sync address to rx
+        SxBaseBurstWrite(REG_FIFO, (unsigned char *) buff_tx_pckt, pckt_len - 1);    //-1 for sync address
+        LED_ON;
+        timer_standby = 100;
+        SxFskSetOpMode(RF_OPMODE_TRANSMITTER);
+
+        // wait end of tx
+        while (timer_standby)
+        {
+            fifo_st = SxBaseRead(REG_IRQFLAGS2);
+            if (fifo_st & RF_IRQFLAGS2_PACKETSENT)
+            {
+                Usart2Send("setting tx off ");
+                LED_OFF;
+                SxFskSetOpMode(RF_OPMODE_STANDBY);
+                timer_standby = 0;
+            }
+        }
+
+        if (!(fifo_st & RF_IRQFLAGS2_PACKETSENT))
+        {
+            Usart2Send("timeout on tx ");
+            LED_OFF;
+            SxFskSetOpMode(RF_OPMODE_STANDBY);
+        }
+        
+        Wait_ms(10);
+        opmode = SxFskGetOpMode();
+        sprintf(buff, "opmode: %d\n", opmode);
+        Usart2Send(buff);
+        Wait_ms(1990);
+    }
+}
+
+
+void TF_Sx_Fsk_Transmit_Packet (void)
+{
+    char buff [100] = { 0 };
+    unsigned char opmode = 0;
+    
+    SPI1_Config();
+    Usart2Config();
+
+    Usart2Send ("init device on fsk and packet mode: ");
+    if (!SxFskPacketInit())
+    {
+        while (1)
+        {
+            Usart2Send("ERROR!\n");
+            Wait_ms(1000);
+        }
+    }
+    else
+        Usart2Send("OK\n");
+
+    SxFskSetFreqInt(434000000);
+    Usart2Send("Freq set\n");
+    Wait_ms(10);
+    opmode = SxFskGetOpMode();
+    sprintf(buff, "opmode: %d\n", opmode);
+    Usart2Send(buff);
+    Wait_ms(10);
+
+    unsigned char fifo_st = 0;
+    unsigned char pckt_len = sizeof(buff_tx) - 1;
+    SxBaseWrite(REG_PAYLOADLENGTH, pckt_len);
+    sprintf(buff,"setting tx in packet mode len: %d\n", pckt_len);
+    Usart2Send(buff);
+    
+    Sx_Dio2_Output();
+        
+    while (1)
+    {
+        fifo_st = SxBaseRead (REG_IRQFLAGS2);
+        sprintf(buff, "fifo status irq2: 0x%02x\n", fifo_st);
+        Usart2Send(buff);
+        
+        // set the fifo
+        SxBaseBurstWrite(REG_FIFO, (unsigned char *) buff_tx, pckt_len);
+        LED_ON;
+        timer_standby = 100;
+        SxFskSetOpMode(RF_OPMODE_TRANSMITTER);
+
+        // wait end of tx
+        while (timer_standby)
+        {
+            fifo_st = SxBaseRead(REG_IRQFLAGS2);
+            if (fifo_st & RF_IRQFLAGS2_PACKETSENT)
+            {
+                Usart2Send("setting tx off ");
+                LED_OFF;
+                SxFskSetOpMode(RF_OPMODE_STANDBY);
+                timer_standby = 0;
+            }
+        }
+
+        if (!(fifo_st & RF_IRQFLAGS2_PACKETSENT))
+        {
+            Usart2Send("timeout on tx ");
+            LED_OFF;
+            SxFskSetOpMode(RF_OPMODE_STANDBY);
+        }
+        
+        Wait_ms(10);
+        opmode = SxFskGetOpMode();
+        sprintf(buff, "opmode: %d\n", opmode);
+        Usart2Send(buff);
+        Wait_ms(1990);
     }
 }
 
@@ -1089,6 +1250,7 @@ void TF_Sx_Fsk_Receive_Data_Sliced (void)
 }
 
 
+unsigned char report_sended = 0;
 void TF_Sx_Fsk_Receive_Data_Sliced_OnlyData (void)
 {
     char buff [200] = { 0 };
@@ -1139,7 +1301,7 @@ void TF_Sx_Fsk_Receive_Data_Sliced_OnlyData (void)
         if ((!preamble_det) &&
             (Sx_Dio0_Get()))
         {
-            LED_ON;
+            // LED_ON;
 
             // init the slicer
             DataSlicerRxInit();
@@ -1148,8 +1310,9 @@ void TF_Sx_Fsk_Receive_Data_Sliced_OnlyData (void)
             preamble_det = 1;
             last_dio1 = Sx_Dio1_Get();
             timer_standby = 100;
-            comms_timeout = 2100;    //2% clock compensation
+            comms_timeout = 3000;    //middle of next packet
             pckt_good++;
+            report_sended = 0;
         }
 
         // end of preamble send data to slicer
@@ -1231,7 +1394,7 @@ void TF_Sx_Fsk_Receive_Data_Sliced_OnlyData (void)
             if (pckt_good)
                 pckt_good--;
             
-            LED_OFF;
+            // LED_OFF;
             Usart2Send("preamble timeout\n");
             // only rssi flag
             // SxBaseWrite(REG_IRQFLAGS1, RF_IRQFLAGS1_RSSI);
@@ -1243,77 +1406,269 @@ void TF_Sx_Fsk_Receive_Data_Sliced_OnlyData (void)
             preamble_det = 0;
         }
 
+        // check continuos preamble int with LED
+        if (Sx_Dio0_Get())
+            LED_ON;
+        else
+            LED_OFF;
+                
+
         if (!comms_timeout)
         {
-            comms_timeout = 2100;    //2% clock compensation
+            comms_timeout = 2000;    // time for next packet
             error_preamble++;
             if ((error_preamble % 20) == 0)
             {
-                unsigned int total = error_preamble + error_sync + pckt_good;
-                unsigned int ratep_int = error_preamble * 100 / total;
-                unsigned int ratep_dec = (error_preamble * 10000 / total) - ratep_int * 100;
+                SendRates (error_preamble, error_sync, pckt_good);
+            }
+        }
 
-                unsigned int rates_int = error_sync * 100 / total;
-                unsigned int rates_dec = (error_sync * 10000 / total) - rates_int * 100;
-                
-                sprintf(buff, "total: %d preamble err: %d sync err: %d pre: %d.%d%% sync: %d.%d%%\n",
-                        total,
-                        error_preamble,
-                        error_sync,
-                        ratep_int,
-                        ratep_dec,
-                        rates_int,
-                        rates_dec);
-                Usart2Send(buff);
+        if ((!preamble_det) &&
+            (comms_timeout > 800) &&
+            (comms_timeout < 1200))
+        {
+            if (((pckt_good % 100) == 0) && (!report_sended))
+            {
+                report_sended = 1;
+                SendRates (error_preamble, error_sync, pckt_good);
             }
         }
     }
 }
 
-// void TF_Usart2_Adc_Dma (void)
-// {
-//     for (unsigned char i = 0; i < 5; i++)
-//     {
-//         LED_ON;
-//         Wait_ms(250);
-//         LED_OFF;
-//         Wait_ms(250);
-//     }
+
+void TF_Sx_Fsk_Receive_Packet_Data (void)
+{
+    char buff [200] = { 0 };
+    char buff_rx [60] = { 0 };    
+    unsigned char opmode = 0;
     
-//     Usart2Config();
+    SPI1_Config();
+    Usart2Config();
 
-//     //-- ADC Init
-//     AdcConfig();
+    Usart2Send ("init device on fsk packet mode: ");
+    if (!SxFskPacketInit())
+    {
+        while (1)
+        {
+            Usart2Send("ERROR!\n");
+            Wait_ms(1000);
+        }
+    }
+    else
+        Usart2Send("OK\n");
 
-//     //-- DMA configuration and Init
-//     DMAConfig();
-//     DMA1_Channel1->CCR |= DMA_CCR_EN;
+    Wait_ms(300);
+    opmode = SxFskGetOpMode();
+    sprintf(buff, "opmode: %d\n", opmode);
+    Usart2Send(buff);
+    Wait_ms(300);
 
-//     ADC1->CR |= ADC_CR_ADSTART;
+    SxFskSetFreqInt(433997500);
+    Sx_Dio1_Input();
+    Sx_Dio2_Input();    
 
-//     unsigned short cntr = 0;
-//     char s_to_send [100] = { 0 };
-//     Usart2Send("\nTesting ADC with dma transfers...\n");
+    unsigned char pckt_len = sizeof(buff_tx) - 1;    // only payload
+    unsigned int error_preamble = 0;
+    unsigned int error_sync = 0;        
+    unsigned int pckt_good = 0;    
 
-//     while (1)
-//     {
-//         if (sequence_ready)
-//         {
-//             sequence_ready_reset;
-//             if (cntr < 10000)
-//                 cntr++;
-//             else
-//             {
-//                 sprintf(s_to_send, "V_Sense_4V: %d V_Sense_12V: %d\n",
-//                         V_Sense_4V,
-//                         V_Sense_12V);
+    sprintf(buff,"setting rx in packet mode len: %d\n", pckt_len);
+    Usart2Send(buff);
+    SxBaseWrite(REG_PAYLOADLENGTH, pckt_len);
+    unsigned char fifo_st = SxBaseRead (REG_IRQFLAGS2);
+    sprintf(buff, "fifo status irq2: 0x%02x\n", fifo_st);
+    Usart2Send(buff);
+
+    // get rx with crc errors
+    // check init
+
+    SxFskSetOpMode(RF_OPMODE_RECEIVER);
+    comms_timeout = 20000;
+    
+    while (1)
+    {
+        // packet ready
+        if (Sx_Dio0_Get())
+        {
+            LED_ON;
+            comms_timeout = 3000;
+
+            // unsigned char rx_flags1 = SxBaseRead(REG_IRQFLAGS1);
+            // unsigned char rx_flags2 = SxBaseRead(REG_IRQFLAGS2);            
+            // sprintf(buff, "rx fifo irq1: 0x%02x irq2: 0x%02x\n",
+            //         rx_flags1,
+            //         rx_flags2);
+            
+            // Usart2Send(buff);
+            // Wait_ms(10);
+
+            SxBaseBurstRead(REG_FIFO, (unsigned char *) buff_rx, pckt_len);
+            Usart2Send(buff_rx);
+            
+            // Wait_ms(10);            
+            // rx_flags1 = SxBaseRead(REG_IRQFLAGS1);
+            // rx_flags2 = SxBaseRead(REG_IRQFLAGS2);
+            // sprintf(buff, "irq1: 0x%02x irq2: 0x%02x\n",
+            //         rx_flags1,
+            //         rx_flags2);
+            // Usart2Send(buff);
+            // Wait_ms(10);
+
+            unsigned char rx_flags2 = SxBaseRead(REG_IRQFLAGS2);
+            if (rx_flags2 & RF_IRQFLAGS2_PAYLOADREADY)
+            {
+                error_sync++;
+                Wait_ms(100);
+                Usart2Send("Payload len error\n");
+            }
+            else
+                pckt_good++;
+            
+            LED_OFF;
+        }
+
+        if (!comms_timeout)
+        {
+            comms_timeout = 2000;    // time for next packet
+            error_preamble++;
+            if ((error_preamble % 20) == 0)
+            {
+                SendRates (error_preamble, error_sync, pckt_good);
+            }
+        }
+
+        if (!timer_secs)
+        {
+            if ((comms_timeout > 800) &&
+                (comms_timeout < 1200))
+            {
+                SendRates (error_preamble, error_sync, pckt_good);
+                timer_secs = 60;                
+            }
+        }
+    }
+}
+
+
+void SendRates (unsigned int err_preamble,
+                unsigned int err_sync,
+                unsigned int p_good)
+{
+    char buff [200] = { 0 };
+    unsigned int total = err_preamble + err_sync + p_good;
+    unsigned int ratep_int = err_preamble * 100 / total;
+    unsigned int ratep_dec = (err_preamble * 10000 / total) - ratep_int * 100;
+
+    unsigned int rates_int = err_sync * 100 / total;
+    unsigned int rates_dec = (err_sync * 10000 / total) - rates_int * 100;
                 
-//                 Usart2Send(s_to_send);
-//                 cntr = 0;
-//             }
-//         }            
-//     }
-// }
+    sprintf(buff, "total: %d preamble err: %d sync err: %d pre: %d.%02d%% sync: %d.%02d%%\n",
+            total,
+            err_preamble,
+            err_sync,
+            ratep_int,
+            ratep_dec,
+            rates_int,
+            rates_dec);
+    Usart2Send(buff);
+}
 
+
+void TF_Timeouts (void)
+{
+    if (timer_millis)
+        timer_millis--;
+    else
+    {
+        timer_millis = 1000;
+
+        if (timer_secs)
+            timer_secs--;
+    }
+
+    if (timer_pckt)
+        timer_pckt++;
+}
+
+
+////////////////
+// Lora Tests //
+////////////////
+void TF_Sx_Lora_Transmit_Packet (void)
+{
+    char buff [100] = { 0 };
+    unsigned char opmode = 0;
+    
+    SPI1_Config();
+    Usart2Config();
+
+    Usart2Send ("init device on lora packet mode: ");
+    if (!SxLoRaInit())
+    {
+        while (1)
+        {
+            Usart2Send("ERROR!\n");
+            Wait_ms(1000);
+        }
+    }
+    else
+        Usart2Send("OK\n");
+
+    // SxFskSetFreqInt(434000000);
+    // Usart2Send("Freq set\n");
+    // Wait_ms(10);
+    opmode = SxLoraGetOpMode();
+    sprintf(buff, "opmode: %d\n", opmode);
+    Usart2Send(buff);
+    Wait_ms(10);
+
+    unsigned char fifo_st = 0;
+    unsigned char pckt_len = sizeof(buff_tx) - 1;
+    SxBaseWrite(REG_LR_PAYLOADLENGTH, pckt_len);
+    sprintf(buff,"setting tx in packet mode len: %d\n", pckt_len);
+    Usart2Send(buff);
+    
+    Sx_Dio2_Output();
+        
+    while (1)
+    {
+        unsigned char tx_ongoing = 1;
+        fifo_st = SxBaseRead (REG_LR_IRQFLAGS);
+        opmode = SxBaseRead(REG_LR_OPMODE);
+        sprintf(buff, "irq: 0x%02x opmode_reg: 0x%02x\n", fifo_st, opmode);
+        Usart2Send(buff);
+        
+        // set the fifo
+        unsigned char pfifo = SxBaseRead(REG_LR_FIFOTXBASEADDR);
+        SxBaseWrite(REG_LR_FIFOADDRPTR, pfifo);
+        SxBaseBurstWrite(REG_LR_FIFO, (unsigned char *) buff_tx, pckt_len);
+        SxBaseWrite(REG_LR_PAYLOADLENGTH, pckt_len);
+        LED_ON;
+        timer_pckt = 1;
+        SxLoraSetOpMode(RFLR_OPMODE_TRANSMITTER);
+
+        // wait end of tx
+        while (tx_ongoing)
+        {
+            fifo_st = SxBaseRead(REG_LR_IRQFLAGS);
+            if (fifo_st & RFLR_IRQFLAGS_TXDONE)
+            {
+                sprintf(buff, "tx off irq: 0x%02x time: %d\n", fifo_st, timer_pckt);
+                Usart2Send(buff);
+                SxBaseWrite(REG_LR_IRQFLAGS, RFLR_IRQFLAGS_TXDONE);
+                LED_OFF;
+                tx_ongoing = 0;
+                timer_pckt = 0;
+            }
+        }
+        
+        Wait_ms(10);
+        opmode = SxLoraGetOpMode();
+        sprintf(buff, "opmode: %d\n", opmode);
+        Usart2Send(buff);
+        Wait_ms(990);
+    }
+}
 
 //--- end of file ---//

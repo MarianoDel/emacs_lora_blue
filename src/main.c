@@ -67,20 +67,25 @@ int main (void)
     // TF_PB0 ();
     // TF_Sx_Init ();
 
-    // transimit tests
+    // transmit tests
     // TF_Sx_Fsk_Transmit ();
     // TF_Sx_Fsk_Transmit_Zero_Dev ();
     // TF_Sx_Fsk_Transmit_Modulation ();
     // TF_Sx_Fsk_Transmit_Modulation_Preamble ();
     // TF_Sx_Fsk_Transmit_Modulation2 ();
     // TF_Sx_Fsk_Transmit_Modulation_Sliced ();
+    // TF_Sx_Fsk_Transmit_Packet_for_Slicer ();
+    // TF_Sx_Fsk_Transmit_Packet ();
 
     // receive tests
     // TF_Sx_Fsk_Receive_Rssi ();
     // TF_Sx_Fsk_Receive_Preamble ();
     // TF_Sx_Fsk_Receive_Data_Sliced ();
-    TF_Sx_Fsk_Receive_Data_Sliced_OnlyData ();
-    
+    // TF_Sx_Fsk_Receive_Data_Sliced_OnlyData ();
+    // TF_Sx_Fsk_Receive_Packet_Data ();
+
+    // transmit lora tests
+    TF_Sx_Lora_Transmit_Packet ();
 
     // Peripherals Activation
     // USART2Config();
@@ -105,6 +110,8 @@ void TimingDelay_Decrement(void)
 
     if (timer_led)
         timer_led--;
+
+    TF_Timeouts ();
 
 }
 

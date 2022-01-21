@@ -1,0 +1,20 @@
+* For tests on fsk tx and rx
+** always on test_functions and main
+*** tx and rx continuos, with data slicers
+    - for tx on main
+    - TF_Sx_Fsk_Transmit_Modulation_Sliced ()
+    - for rx on main
+    - TF_Sx_Fsk_Receive_Data_Sliced_OnlyData ()
+
+*** tx packet and rx continuos
+    - for tx on main
+    - TF_Sx_Fsk_Transmit_Packet_for_Slicer ()
+    - for rx on main
+    - TF_Sx_Fsk_Receive_Data_Sliced_OnlyData ()
+
+*** tx and rx packet
+    - for tx on main
+    - TF_Sx_Fsk_Transmit_Packet ()
+    - for rx on main
+    - TF_Sx_Fsk_Receive_Packet_Data ()
+      

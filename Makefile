@@ -82,6 +82,7 @@ SRC += ./src/sx1278_base.c
 SRC += ./src/sx1278_fsk.c
 SRC += ./src/sx1278_base_io.c
 SRC += ./src/data_slicer.c
+SRC += ./src/sx1278_lora.c
 
 ## Core Support
 SRC += ./startup_src/syscalls.c
@@ -251,6 +252,16 @@ tests_data_slicer:
 	# process coverage
 	gcov data_slicer.c -m
 
+tests_sendrate:
+	# first module objects to test
+	gcc -c src/test_functions.c -I. $(INCDIR) $(DDEFS)
+	# second auxiliary helper modules
+	gcc -c src/tests_ok.c
+	gcc -c src/tests_mock_usart.c
+	gcc -c src/tests_mock_spi.c
+	gcc src/tests_sendrate.c test_functions.o tests_ok.o tests_mock_usart.o tests_mock_spi.o -I $(INCDIR) $(DDEFS)
+	# test execution
+	./a.out
 
 tests_sx1278_fsk:
 	# first module objects to test

@@ -1172,24 +1172,6 @@ typedef enum {
 
 
 // Module Exported Functions ---------------------------------------------------
-// void SX1278FskInit( void );
-// void SX1278FskReset( void );
-// void SX1278FskSetLoRaOn( bool enable );
-// void SX1278FskSetOpMode( uint8_t opMode );
-// uint8_t SX1278FskGetOpMode( void );
-// int32_t SX1278FskReadFei( void );
-// int32_t SX1278FskReadAfc( void );
-// uint8_t SX1278FskReadRxGain( void );
-// double SX1278FskReadRssi( void );
-// uint8_t SX1278FskGetPacketRxGain( void );
-// double SX1278FskGetPacketRssi( void );
-// uint32_t SX1278FskGetPacketAfc( void );
-// void SX1278FskStartRx( void );
-// void SX1278FskGetRxPacket( void *buffer, uint16_t *size );
-// void SX1278FskSetTxPacket( const void *buffer, uint16_t size );
-// uint8_t SX1278FskGetRFState( void );
-// void SX1278FskSetRFState( uint8_t state );
-// uint32_t SX1278FskProcess( void );
 unsigned char SxFskInit (void);
 unsigned char SxFsk_GetState (void);
 void SxFskSetFreq (unsigned int freq);
@@ -1204,6 +1186,8 @@ unsigned int SxFskGetBitrate (void);
 void SxFskSetModuletionIndex (unsigned int bitrate, float mi);
 float SxFskGetModuletionIndex (void);
 short SxFskGetRssiValue (void);
+
+unsigned char SxFskPacketInit (void);
 
 
 

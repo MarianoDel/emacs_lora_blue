@@ -39,12 +39,19 @@ void TF_Sx_Fsk_Transmit_Modulation (void);
 void TF_Sx_Fsk_Transmit_Modulation_Preamble (void);
 void TF_Sx_Fsk_Transmit_Modulation2 (void);
 void TF_Sx_Fsk_Transmit_Modulation_Sliced (void);
+void TF_Sx_Fsk_Transmit_Packet_for_Slicer (void);
+void TF_Sx_Fsk_Transmit_Packet (void);
 
 void TF_Sx_Fsk_Receive_Rssi (void);
 void TF_Sx_Fsk_Receive_Preamble (void);
 void TF_Sx_Fsk_Receive_Data_Sliced (void);
 void TF_Sx_Fsk_Receive_Data_Sliced_OnlyData (void);
+void TF_Sx_Fsk_Receive_Packet_Data (void);
 
+void TF_Timeouts (void);
+
+// Lora tests
+void TF_Sx_Lora_Transmit_Packet (void);
 
 #endif    /* _TEST_FUNTIONS_H_ */
 
