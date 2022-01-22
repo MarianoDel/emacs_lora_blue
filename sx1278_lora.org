@@ -18,3 +18,17 @@
     - for rx on main
     - TF_Sx_Fsk_Receive_Packet_Data ()
       
+
+* For tests on Lora tx rx
+** always on test_functions and main
+*** tx and rx packet no crc
+    - for tx on main
+    - TF_Sx_Lora_Transmit_Packet ()
+    - for rx on main
+    - TF_Sx_Lora_Receive_Packet ()
+
+*** tx and rx packet crc on
+    - for tx on main
+    - TF_Sx_Lora_Transmit_Packet_Crc_On ()
+    - for rx on main
+    - TF_Sx_Lora_Receive_Packet ()

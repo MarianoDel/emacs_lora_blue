@@ -1633,6 +1633,7 @@ void TF_Sx_Lora_Transmit_Packet (void)
         
     while (1)
     {
+        timer_standby = 2000;
         unsigned char tx_ongoing = 1;
         fifo_st = SxBaseRead (REG_LR_IRQFLAGS);
         opmode = SxBaseRead(REG_LR_OPMODE);
@@ -1667,7 +1668,216 @@ void TF_Sx_Lora_Transmit_Packet (void)
         opmode = SxLoraGetOpMode();
         sprintf(buff, "opmode: %d\n", opmode);
         Usart2Send(buff);
-        Wait_ms(990);
+
+        while(timer_standby);    // wait up to 2secs.
+    }
+}
+
+
+void TF_Sx_Lora_Transmit_Packet_Crc_On (void)
+{
+    char buff [100] = { 0 };
+    unsigned char opmode = 0;
+    
+    SPI1_Config();
+    Usart2Config();
+
+    Usart2Send ("init device on lora packet mode: ");
+    if (!SxLoRaInit())
+    {
+        while (1)
+        {
+            Usart2Send("ERROR!\n");
+            Wait_ms(1000);
+        }
+    }
+    else
+        Usart2Send("OK\n");
+
+    // SxFskSetFreqInt(434000000);
+    // Usart2Send("Freq set\n");
+    // Wait_ms(10);
+    opmode = SxLoraGetOpMode();
+    sprintf(buff, "opmode: %d\n", opmode);
+    Usart2Send(buff);
+    Wait_ms(10);
+
+    unsigned char fifo_st = 0;
+    unsigned char pckt_len = sizeof(buff_tx) - 1;
+    SxBaseWrite(REG_LR_PAYLOADLENGTH, pckt_len);
+    unsigned char modem_conf = SxBaseRead(REG_LR_MODEMCONFIG2);
+    SxBaseWrite(REG_LR_MODEMCONFIG2, modem_conf | RFLR_MODEMCONFIG2_RXPAYLOADCRC_ON);
+    sprintf(buff,"setting tx in packet mode len: %d crc: on\n", pckt_len);
+    Usart2Send(buff);
+    
+    Sx_Dio2_Output();
+        
+    while (1)
+    {
+        timer_standby = 2000;
+        unsigned char tx_ongoing = 1;
+        fifo_st = SxBaseRead (REG_LR_IRQFLAGS);
+        opmode = SxBaseRead(REG_LR_OPMODE);
+        sprintf(buff, "irq: 0x%02x opmode_reg: 0x%02x\n", fifo_st, opmode);
+        Usart2Send(buff);
+        
+        // set the fifo
+        unsigned char pfifo = SxBaseRead(REG_LR_FIFOTXBASEADDR);
+        SxBaseWrite(REG_LR_FIFOADDRPTR, pfifo);
+        SxBaseBurstWrite(REG_LR_FIFO, (unsigned char *) buff_tx, pckt_len);
+        SxBaseWrite(REG_LR_PAYLOADLENGTH, pckt_len);
+        LED_ON;
+        timer_pckt = 1;
+        SxLoraSetOpMode(RFLR_OPMODE_TRANSMITTER);
+
+        // wait end of tx
+        while (tx_ongoing)
+        {
+            fifo_st = SxBaseRead(REG_LR_IRQFLAGS);
+            if (fifo_st & RFLR_IRQFLAGS_TXDONE)
+            {
+                sprintf(buff, "tx off irq: 0x%02x time: %d\n", fifo_st, timer_pckt);
+                Usart2Send(buff);
+                SxBaseWrite(REG_LR_IRQFLAGS, RFLR_IRQFLAGS_TXDONE);
+                LED_OFF;
+                tx_ongoing = 0;
+                timer_pckt = 0;
+            }
+        }
+        
+        Wait_ms(10);
+        opmode = SxLoraGetOpMode();
+        sprintf(buff, "opmode: %d\n", opmode);
+        Usart2Send(buff);
+
+        while(timer_standby);    // wait up to 2secs.
+    }
+}
+
+
+void TF_Sx_Lora_Receive_Packet (void)
+{
+    char buff [100] = { 0 };
+    char buff_rx [60] = { 0 };
+    unsigned char opmode = 0;
+    
+    SPI1_Config();
+    Usart2Config();
+
+    Usart2Send ("init device on lora packet mode: ");
+    if (!SxLoRaInit())
+    {
+        while (1)
+        {
+            Usart2Send("ERROR!\n");
+            Wait_ms(1000);
+        }
+    }
+    else
+        Usart2Send("OK\n");
+
+    // SxFskSetFreqInt(434000000);
+    // Usart2Send("Freq set\n");
+    // Wait_ms(10);
+    opmode = SxLoraGetOpMode();
+    sprintf(buff, "opmode: %d\n", opmode);
+    Usart2Send(buff);
+    Wait_ms(10);
+
+    unsigned char fifo_st = 0;
+    unsigned char pckt_len = 0;
+    sprintf(buff,"setting rx in lora packet mode\n");
+    Usart2Send(buff);
+    
+    Sx_Dio1_Input();
+    Sx_Dio2_Input();    
+
+    unsigned int error_preamble = 0;
+    unsigned int error_sync = 0;        
+    unsigned int pckt_good = 0;    
+
+
+    // get rx with crc errors
+    // check init
+
+    SxLoraSetOpMode(RFLR_OPMODE_RECEIVER);
+    comms_timeout = 20000;
+    
+    while (1)
+    {
+        // packet ready
+        if (Sx_Dio0_Get())
+        {
+            LED_ON;
+            comms_timeout = 3000;
+            // get interrupts
+            fifo_st = SxBaseRead(REG_LR_IRQFLAGS);
+            // get packet len
+            pckt_len = SxBaseRead(REG_LR_NBRXBYTES);
+            // get packet addr
+            unsigned char addr = SxBaseRead(REG_LR_FIFORXCURRENTADDR);
+
+            if (fifo_st & (RFLR_IRQFLAGS_RXTIMEOUT |
+                           RFLR_IRQFLAGS_PAYLOADCRCERROR))
+            {
+                error_sync++;
+                SxBaseWrite(REG_LR_IRQFLAGS,
+                            RFLR_IRQFLAGS_RXTIMEOUT |
+                            RFLR_IRQFLAGS_PAYLOADCRCERROR);
+
+                short rssi = SxLoraGetPcktRssi();
+                short snr = SxLoraGetPcktSnr();
+                sprintf(buff,"irq: 0x%02x rssi: %d snr: %d\n",
+                        fifo_st,
+                        rssi,
+                        snr);
+                Usart2Send(buff);
+            }
+            else
+            {
+                // sprintf(buff, "rx irq: 0x%02x len: %d addr: 0x%02x\n",
+                //         fifo_st,
+                //         pckt_len,
+                //         addr);
+                // Usart2Send(buff);
+                // Wait_ms(20);
+
+                // set spi pointer for read
+                SxBaseWrite(REG_LR_FIFOADDRPTR, addr);
+                SxBaseBurstRead(REG_LR_FIFO, (unsigned char *) buff_rx, pckt_len);
+                Usart2Send(buff_rx);
+                pckt_good++;
+            }
+
+            // reset the flag
+            SxBaseWrite(REG_LR_IRQFLAGS, RFLR_IRQFLAGS_RXDONE);
+            
+            // reset the pointer
+            SxBaseWrite(REG_LR_FIFOADDRPTR, 0x00);
+
+            LED_OFF;
+
+        }
+
+        if (!comms_timeout)
+        {
+            comms_timeout = 2000;    // time for next packet
+            error_preamble++;
+            if ((error_preamble % 20) == 0)
+            {
+                SendRates (error_preamble, error_sync, pckt_good);
+            }
+        }
+
+        if (!timer_secs)
+        {
+            if ((comms_timeout > 800) &&
+                (comms_timeout < 1200))
+            {
+                SendRates (error_preamble, error_sync, pckt_good);
+                timer_secs = 60;                
+            }
+        }
     }
 }
 

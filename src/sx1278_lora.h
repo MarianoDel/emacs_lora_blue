@@ -900,6 +900,10 @@ typedef enum
 unsigned char SxLoRaInit( void );
 void SxLoraSetOpMode (unsigned char new_mode);
 unsigned char SxLoraGetOpMode (void);
+short SxLoraGetCurrentRssi (void);
+short SxLoraGetPcktSnr (void);
+short SxLoraGetPcktRssi (void);
+short SxLoraGetPcktStrength (void);
 
 
 

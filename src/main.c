@@ -85,7 +85,11 @@ int main (void)
     // TF_Sx_Fsk_Receive_Packet_Data ();
 
     // transmit lora tests
-    TF_Sx_Lora_Transmit_Packet ();
+    // TF_Sx_Lora_Transmit_Packet ();
+    // TF_Sx_Lora_Transmit_Packet_Crc_On ();
+
+    // receive lora tests
+    TF_Sx_Lora_Receive_Packet ();
 
     // Peripherals Activation
     // USART2Config();

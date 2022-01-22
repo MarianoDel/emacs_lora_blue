@@ -52,6 +52,8 @@ void TF_Timeouts (void);
 
 // Lora tests
 void TF_Sx_Lora_Transmit_Packet (void);
+void TF_Sx_Lora_Transmit_Packet_Crc_On (void);
+void TF_Sx_Lora_Receive_Packet (void);
 
 #endif    /* _TEST_FUNTIONS_H_ */
 
